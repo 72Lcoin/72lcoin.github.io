@@ -1,14 +1,90 @@
 <!DOCTYPE html>
 <html lang="zh">
-  <head>
+<head>
     <meta charset="UTF-8">
-    <title>数据联通测试（开发者）</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  </head>
-  <body>
-    <script>
-        import { createClient } from 'jsr:@supabase/supabase-js@2'
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户数据查询</title>
+    <!-- 引入 Supabase 客户端库作为模块 -->
+    <script type="module" src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>用户数据查询</h1>
+    <form id="queryForm">
+        <label for="userId">输入用户ID:</label>
+        <input type="text" id="userId" name="userId">
+        <label for="lie">查论列</label>
+        <input type="text" id="lie" name="lie">
+        <button type="submit">搜索</button>
+    </form>
+    <div id="results"></div>
+
+    <script type="module">
+        // 初始化 Supabase
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        const supabaseUrl = 'https://vdblkfiyurejcsgdgllu.supabase.co'; // 替换为你的 Supabase URL
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkYmxrZml5dXJlamNzZ2RnbGx1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyOTA4Mzg4NiwiZXhwIjoyMDQ0NjU5ODg2fQ.ouHl1XvNYWeudu1a8tV0BhlZncaV2YArlPS9QvWJuK8'; // 替换为你的 Supabase 密钥
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // 处理表单提交
+        document.getElementById('queryForm').addEventListener('submit', async (event) => {
+            event.preventDefault(); // 阻止表单默认提交行为
+            const userId = document.getElementById('userId').value; // 获取用户输入的用户ID
+            const lie = document.getElementById('lie').value;
+            const { data, error } = await supabase
+              .from('Users')
+              .select(lie)
+              .eq('id',userId)
+
+            // 显示结果
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = ''; // 清除之前的结果
+            if (data.length > 0) {
+                data.forEach(row => {
+                    resultsContainer.innerHTML += `<p>${JSON.stringify(row)}</p>`; // 将每行数据转换为字符串并显示
+                });
+            } else {
+                resultsContainer.innerHTML = `<p>No Data Found</p>`; // 如果没有找到数据，显示提示信息
+            }
+        });
     </script>
+    <br/>
+    <h1>用户数据修改(beta)</h1>
+    <form id="queryForm2">
+        <label for="userId2">输入用户ID:</label>
+        <input type="text" id="userId2" name="userId2">
+        <label for="lie2">修改列</label>
+        <input type="text" id="lie2" name="lie2">
+        <label for="gai">修改为</label>
+        <input type="text" id="gai" name="gai">
+        <button type="submit2">修改</button>
+    </form>
+
+    <script type="module">
+        // 更新数据的函数
+        async function updateData() {
+            try {
+                // 假设我们要更新表名为"users"的数据
+                const { data, error } = await supabase
+                    .from('users')
+                    .update({ lie2: gai }) // 更新的数据
+                    .match({ id: userId2 }); // 匹配条件
+
+                if (error) {
+                    console.error('Error updating data:', error);
+                    document.getElementById('result').textContent = 'No';
+                } else {
+                    console.log('Data updated successfully:', data);
+                    document.getElementById('result').textContent = 'Done';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = 'No';
+            }
+        }
+
+        // 绑定按钮点击事件
+        document.getElementById('queryForm2').addEventListener('submit2', updateData);
     
-  </body>
+    </script>
+</body>
 </html>

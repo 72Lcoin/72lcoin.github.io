@@ -57,8 +57,7 @@
 </head>
 <body>
 <div class="login-container">
-  <h2>注册</h2>
-  <form action="/login" method="post">
+  <h2>Login</h2>
     <div class="form-group">
       <label for="username">用户名:</label>
       <input type="text" id="username" name="username" required>
@@ -68,9 +67,33 @@
       <input type="password" id="password" name="password" required>
     </div>
     <div class="form-group">
-      <input type="submit" value="注册">
+      <button type="submit" value="登录">登录</button>
+      <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        const supabaseUrl = 'https://vdblkfiyurejcsgdgllu.supabase.co'; // 替换为你的 Supabase URL
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkYmxrZml5dXJlamNzZ2RnbGx1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyOTA4Mzg4NiwiZXhwIjoyMDQ0NjU5ODg2fQ.ouHl1XvNYWeudu1a8tV0BhlZncaV2YArlPS9QvWJuK8'; // 替换为你的 Supabase 密钥
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // 处理表单提交
+        document.getElementById('queryForm').addEventListener('submit', async (event) => {
+            event.preventDefault(); // 阻止表单默认提交行为
+            const userId = document.getElementById('userId').value; // 获取用户输入的用户ID
+            const { data, error } = await supabase
+              .from('Users')
+              .select('password')
+              .eq('id',userId)
+
+            // 显示结果
+            if (data.length > 0 && data == password) {
+              sessionStorage.setItem("id", userId);
+              sessionStorage.setItem("password", data);
+              // 跳转到指定的URL
+              window.location.href = "index.html";
+
+            } 
+        });
+      </script>
     </div>
-  </form>
 </div>
 </body>
 </html>
