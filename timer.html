@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多功能计时器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            text-align: center;
+        }
+        
+        .time-display {
+            font-size: 10vw;
+            font-weight: bold;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            color: #333;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            width: 100%;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 50px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button.stop {
+            background-color: #f44336;
+        }
+        
+        button.reset {
+            background-color: #2196F3;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid #4CAF50;
+            font-weight: bold;
+        }
+        
+        .input-group {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .input-group.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+            margin: 0 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        .custom-text {
+            font-size: 16px;  /* 正常字号大小 */
+            margin-top: 30px;
+            color: #666;
+            text-align: center;
+            padding: 0 20px;
+            max-width: 800px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="clock">当前时间</div>
+            <div class="tab" data-tab="stopwatch">正计时</div>
+            <div class="tab" data-tab="countdown">倒计时</div>
+        </div>
+        
+        <div class="time-display" id="timeDisplay">00:00:00</div>
+        
+        <div class="input-group" id="stopwatchInput">
+            <button id="startStopwatch">开始</button>
+            <button id="stopStopwatch" class="stop">停止</button>
+            <button id="resetStopwatch" class="reset">重置</button>
+        </div>
+        
+        <div class="input-group" id="countdownInput">
+            <div>
+                <input type="number" id="hours" min="0" max="23" value="0"> 时
+                <input type="number" id="minutes" min="0" max="59" value="0"> 分
+                <input type="number" id="seconds" min="0" max="59" value="0"> 秒
+            </div>
+            <div class="controls">
+                <button id="startCountdown">开始</button>
+                <button id="stopCountdown" class="stop">停止</button>
+                <button id="resetCountdown" class="reset">重置</button>
+            </div>
+        </div>
+    </div>
+    <div class="custom-text">
+        <!-- 这里可以写您想添加的自定义内容 -->
+        欢迎使用timer.html！木钉文化提醒您：知罪，认罪，痛改前非；知法，犯法，重新做人！
+    </div>
+    <div class="notification" id="notification">计时结束！</div>
+    
+    <script>
+        // 获取DOM元素
+        const timeDisplay = document.getElementById('timeDisplay');
+        const tabs = document.querySelectorAll('.tab');
+        const inputGroups = document.querySelectorAll('.input-group');
+        const notification = document.getElementById('notification');
+        
+        // 计时器变量
+        let clockInterval;
+        let stopwatchInterval;
+        let countdownInterval;
+        let stopwatchSeconds = 0;
+        let countdownSeconds = 0;
+        
+        // 当前时间功能
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        
+        function startClock() {
+            if (!clockInterval) {
+                updateClock();
+                clockInterval = setInterval(updateClock, 1000);
+            }
+        }
+        
+        function stopClock() {
+            clearInterval(clockInterval);
+            clockInterval = null;
+        }
+        
+        // 正计时功能
+        function updateStopwatchDisplay() {
+            const hours = Math.floor(stopwatchSeconds / 3600);
+            const minutes = Math.floor((stopwatchSeconds % 3600) / 60);
+            const seconds = stopwatchSeconds % 60;
+            timeDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        document.getElementById('startStopwatch').addEventListener('click', () => {
+            if (!stopwatchInterval) {
+                stopwatchInterval = setInterval(() => {
+                    stopwatchSeconds++;
+                    updateStopwatchDisplay();
+                }, 1000);
+            }
+        });
+        
+        document.getElementById('stopStopwatch').addEventListener('click', () => {
+            clearInterval(stopwatchInterval);
+            stopwatchInterval = null;
+        });
+        
+        document.getElementById('resetStopwatch').addEventListener('click', () => {
+            clearInterval(stopwatchInterval);
+            stopwatchInterval = null;
+            stopwatchSeconds = 0;
+            updateStopwatchDisplay();
+        });
+        
+        // 倒计时功能
+        const hoursInput = document.getElementById('hours');
+        const minutesInput = document.getElementById('minutes');
+        const secondsInput = document.getElementById('seconds');
+        
+        function updateCountdownDisplay() {
+            const hours = Math.floor(countdownSeconds / 3600);
+            const minutes = Math.floor((countdownSeconds % 3600) / 60);
+            const seconds = countdownSeconds % 60;
+            timeDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            if (countdownSeconds <= 0) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+                timeDisplay.classList.add('pulse');
+                showNotification();
+            }
+        }
+        
+        document.getElementById('startCountdown').addEventListener('click', () => {
+            if (!countdownInterval) {
+                const hours = parseInt(hoursInput.value) || 0;
+                const minutes = parseInt(minutesInput.value) || 0;
+                const seconds = parseInt(secondsInput.value) || 0;
+                
+                countdownSeconds = hours * 3600 + minutes * 60 + seconds;
+                
+                if (countdownSeconds > 0) {
+                    timeDisplay.classList.remove('pulse');
+                    updateCountdownDisplay();
+                    
+                    countdownInterval = setInterval(() => {
+                        countdownSeconds--;
+                        updateCountdownDisplay();
+                    }, 1000);
+                }
+            }
+        });
+        
+        document.getElementById('stopCountdown').addEventListener('click', () => {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            timeDisplay.classList.remove('pulse');
+        });
+        
+        document.getElementById('resetCountdown').addEventListener('click', () => {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            countdownSeconds = 0;
+            hoursInput.value = '0';
+            minutesInput.value = '0';
+            secondsInput.value = '0';
+            timeDisplay.classList.remove('pulse');
+            updateCountdownDisplay();
+        });
+        
+        // 显示通知
+        function showNotification() {
+            notification.classList.add('show');
+            
+            // 如果浏览器支持通知API
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    new Notification('计时结束！');
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('计时结束！');
+                        }
+                    });
+                }
+            }
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+        
+        // 标签切换
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 停止所有计时器
+                stopClock();
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+                timeDisplay.classList.remove('pulse');
+                
+                // 更新标签状态
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 隐藏所有输入组
+                inputGroups.forEach(group => group.classList.remove('active'));
+                
+                // 根据选择的标签执行相应操作
+                const tabName = tab.getAttribute('data-tab');
+                if (tabName === 'clock') {
+                    document.getElementById('stopwatchInput').classList.remove('active');
+                    document.getElementById('countdownInput').classList.remove('active');
+                    startClock();
+                } else if (tabName === 'stopwatch') {
+                    document.getElementById('stopwatchInput').classList.add('active');
+                    updateStopwatchDisplay();
+                } else if (tabName === 'countdown') {
+                    document.getElementById('countdownInput').classList.add('active');
+                    updateCountdownDisplay();
+                }
+            });
+        });
+        
+        // 初始化
+        startClock();
+        updateStopwatchDisplay();
+        updateCountdownDisplay();
+    </script>
+</body>
+</html>
