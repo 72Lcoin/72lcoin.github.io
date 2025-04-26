@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>六分钟速算挑战</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --success-color: #4ad66d;
+            --error-color: #f72585;
+            --background-color: #f8f9fa;
+            --card-color: #ffffff;
+            --text-color: #212529;
+            --text-light: #6c757d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .problems-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .timer-section {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .problem {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: rgba(67, 97, 238, 0.05);
+            transition: background-color 0.3s ease;
+        }
+
+        .problem:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+
+        .problem-text {
+            font-size: 18px;
+            font-weight: 500;
+            min-width: 200px;
+        }
+
+        input[type="number"] {
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 150px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.3);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .start-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .start-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .end-btn {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .end-btn:hover {
+            background-color: #d51773;
+            transform: translateY(-2px);
+        }
+
+        .reset-btn {
+            background-color: var(--text-light);
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .timer-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .timer-circle {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .timer-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-progress {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            clip: rect(0, 300px, 300px, 150px);
+            transform: rotate(90deg);
+        }
+
+        .timer-progress-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            clip: rect(0, 150px, 300px, 0);
+            background-color: var(--primary-color);
+            position: absolute;
+            transform: rotate(0deg);
+            transition: transform 1s linear;
+        }
+
+        .timer-overlay {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            border-radius: 50%;
+            background-color: var(--card-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer-display {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .timer-label {
+            font-size: 16px;
+            color: var(--text-light);
+        }
+
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .result-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .result-content {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            padding: 30px;
+            width: 80%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 800px;
+            overflow-y: auto;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-modal.active .result-content {
+            transform: translateY(0);
+        }
+
+        .result-title {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .result-items {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .correct {
+            color: var(--success-color);
+        }
+
+        .incorrect {
+            color: var(--error-color);
+        }
+
+        .accuracy {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .chart-container {
+            height: 300px;
+            min-height: 300px;
+            margin-top: 10px;
+        }
+
+        .modal-footer {
+            margin-top: auto;
+            text-align: center;
+            padding-top: 20px;
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-5px);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .bounce {
+            animation: bounce 0.5s;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-20px);
+            }
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @media (max-width: 992px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .timer-section {
+                width: 100%;
+            }
+            
+            .timer-container {
+                width: 250px;
+                height: 250px;
+            }
+
+            .result-content {
+                width: 95%;
+                height: 95vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="problems-section card">
+            <h1>六分钟速算挑战</h1>
+            <div id="problems-container">
+                <!-- 题目将在这里动态生成 -->
+            </div>
+            <div class="buttons">
+                <button id="start-btn" class="start-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                    </svg>
+                    开始
+                </button>
+                <button id="end-btn" class="end-btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
+                    </svg>
+                    结束
+                </button>
+                <button id="reset-btn" class="reset-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                    </svg>
+                    重置
+                </button>
+            </div>
+        </div>
+
+        <div class="timer-section card">
+            <h2>倒计时</h2>
+            <div class="timer-container">
+                <div class="timer-circle">
+                    <div class="timer-background"></div>
+                    <div class="timer-progress">
+                        <div class="timer-progress-circle" id="progress-circle"></div>
+                    </div>
+                    <div class="timer-overlay">
+                        <div class="timer-display" id="timer-display">06:00</div>
+                        <div class="timer-label">剩余时间</div>
+                    </div>
+                </div>
+            </div>
+            <div class="status-message" id="status-message">准备开始挑战</div>
+        </div>
+    </div>
+
+    <div class="result-modal" id="result-modal">
+        <div class="result-content">
+            <h2 class="result-title">挑战结果</h2>
+            <div class="accuracy" id="accuracy-display"></div>
+            <div class="result-items" id="result-items-container"></div>
+            <div class="chart-container">
+                <canvas id="history-chart"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button id="close-result-btn" class="start-btn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let timer;
+        let timeLeft = 6 * 60; // 6分钟，以秒为单位
+        let isRunning = false;
+        let problems = [];
+        let userAnswers = [];
+        let historyData = JSON.parse(localStorage.getItem('mathChallengeHistory')) || [];
+        const totalTime = 6 * 60;
+
+        // DOM元素
+        const problemsContainer = document.getElementById('problems-container');
+        const startBtn = document.getElementById('start-btn');
+        const endBtn = document.getElementById('end-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const timerDisplay = document.getElementById('timer-display');
+        const progressCircle = document.getElementById('progress-circle');
+        const statusMessage = document.getElementById('status-message');
+        const resultModal = document.getElementById('result-modal');
+        const resultItemsContainer = document.getElementById('result-items-container');
+        const accuracyDisplay = document.getElementById('accuracy-display');
+        const closeResultBtn = document.getElementById('close-result-btn');
+
+        // 初始化
+        function init() {
+            generateProblems();
+            updateTimerDisplay();
+            setupEventListeners();
+            loadHistoryData();
+        }
+
+        // 生成5道四位数乘法题
+        function generateProblems() {
+            problems = [];
+            problemsContainer.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const num1 = Math.floor(1000 + Math.random() * 9000);
+                const num2 = Math.floor(1000 + Math.random() * 9000);
+                const answer = num1 * num2;
+                
+                problems.push({
+                    num1,
+                    num2,
+                    answer,
+                    userAnswer: null,
+                    isCorrect: false
+                });
+                
+                const problemElement = document.createElement('div');
+                problemElement.className = 'problem';
+                problemElement.innerHTML = `
+                    <div class="problem-text">${num1} × ${num2} =</div>
+                    <input type="number" id="answer-${i}" placeholder="输入答案" disabled>
+                    <div class="correct-answer" id="correct-answer-${i}" style="display:none;"></div>
+                `;
+                
+                problemsContainer.appendChild(problemElement);
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            startBtn.addEventListener('click', startChallenge);
+            endBtn.addEventListener('click', endChallenge);
+            resetBtn.addEventListener('click', resetChallenge);
+            closeResultBtn.addEventListener('click', () => {
+                resultModal.classList.remove('active');
+            });
+            
+            // 为所有输入框添加事件监听
+            for (let i = 0; i < 5; i++) {
+                const input = document.getElementById(`answer-${i}`);
+                input.addEventListener('input', function() {
+                    problems[i].userAnswer = parseInt(this.value) || null;
+                });
+            }
+        }
+
+        // 开始挑战
+        function startChallenge() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            timeLeft = totalTime;
+            startBtn.disabled = true;
+            endBtn.disabled = false;
+            
+            // 启用所有输入框
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.disabled = false;
+                input.value = '';
+            });
+            
+            // 启动计时器
+            timer = setInterval(updateTimer, 1000);
+            
+            // 动画效果
+            startBtn.classList.add('pulse');
+            setTimeout(() => {
+                startBtn.classList.remove('pulse');
+            }, 1500);
+            
+            statusMessage.textContent = "挑战进行中...";
+            statusMessage.style.color = "var(--primary-color)";
+        }
+
+        // 更新计时器
+        function updateTimer() {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            // 更新进度圈
+            const progress = 1 - (timeLeft / totalTime);
+            const rotation = progress * 360;
+            
+            if (rotation <= 180) {
+                progressCircle.style.transform = `rotate(${rotation}deg)`;
+            } else {
+                progressCircle.style.transform = `rotate(180deg)`;
+                progressCircle.style.backgroundColor = "var(--error-color)";
+                
+                const secondCircle = document.createElement('div');
+                secondCircle.className = 'timer-progress-circle';
+                secondCircle.style.transform = `rotate(${rotation - 180}deg)`;
+                secondCircle.style.backgroundColor = "var(--error-color)";
+                
+                const timerProgress = document.querySelector('.timer-progress');
+                if (timerProgress.children.length === 1) {
+                    timerProgress.appendChild(secondCircle);
+                } else {
+                    timerProgress.children[1].style.transform = `rotate(${rotation - 180}deg)`;
+                }
+            }
+            
+            // 时间到
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                isRunning = false;
+                endBtn.disabled = true;
+                
+                // 禁用所有输入框
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.disabled = true;
+                });
+                
+                // 显示时间到消息
+                statusMessage.textContent = "时间到!";
+                statusMessage.style.color = "var(--error-color)";
+                statusMessage.classList.add('shake');
+                
+                setTimeout(() => {
+                    statusMessage.classList.remove('shake');
+                }, 500);
+                
+                // 自动结束挑战
+                setTimeout(endChallenge, 1000);
+            }
+            
+            // 最后30秒警告
+            if (timeLeft === 30) {
+                timerDisplay.style.color = "var(--error-color)";
+                statusMessage.textContent = "只剩30秒了!";
+                statusMessage.style.color = "var(--error-color)";
+                statusMessage.classList.add('shake');
+                
+                setTimeout(() => {
+                    statusMessage.classList.remove('shake');
+                }, 500);
+            }
+        }
+
+        // 更新计时器显示
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const seconds = (timeLeft % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        // 结束挑战
+        function endChallenge() {
+            if (!isRunning && timeLeft > 0) return;
+            
+            clearInterval(timer);
+            isRunning = false;
+            startBtn.disabled = false;
+            endBtn.disabled = true;
+            
+            // 禁用所有输入框
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.disabled = true;
+            });
+            
+            // 检查答案
+            checkAnswers();
+            
+            // 显示结果
+            showResults();
+            
+            // 动画效果
+            endBtn.classList.add('bounce');
+            setTimeout(() => {
+                endBtn.classList.remove('bounce');
+            }, 500);
+            
+            statusMessage.textContent = "挑战结束";
+            statusMessage.style.color = "var(--text-color)";
+        }
+
+        // 检查答案
+        function checkAnswers() {
+            let correctCount = 0;
+            let unansweredCount = 0;
+            
+            for (let i = 0; i < problems.length; i++) {
+                const problem = problems[i];
+                const userAnswer = problem.userAnswer;
+                
+                if (userAnswer === null || isNaN(userAnswer)) {
+                    unansweredCount++;
+                    problem.isCorrect = false;
+                } else {
+                    problem.isCorrect = userAnswer === problem.answer;
+                    if (problem.isCorrect) correctCount++;
+                }
+            }
+            
+            // 保存到历史数据
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            
+            const accuracy = Math.round((correctCount / problems.length) * 100);
+            
+            // 查找今天是否已有记录
+            const todayIndex = historyData.findIndex(item => item.date === dateStr);
+            
+            if (todayIndex !== -1) {
+                // 更新今天的记录
+                historyData[todayIndex].accuracy = accuracy;
+                historyData[todayIndex].completed = (unansweredCount === 0);
+            } else {
+                // 添加新记录
+                historyData.push({
+                    date: dateStr,
+                    accuracy: accuracy,
+                    completed: (unansweredCount === 0),
+                    timeLeft: timeLeft
+                });
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('mathChallengeHistory', JSON.stringify(historyData));
+        }
+
+        // 显示结果
+        function showResults() {
+            resultItemsContainer.innerHTML = '';
+            
+            let correctCount = 0;
+            let unansweredCount = 0;
+            
+            for (let i = 0; i < problems.length; i++) {
+                const problem = problems[i];
+                const userAnswer = problem.userAnswer;
+                const isCorrect = problem.isCorrect;
+                
+                if (isCorrect) correctCount++;
+                if (userAnswer === null || isNaN(userAnswer)) unansweredCount++;
+                
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                
+                const problemText = document.createElement('div');
+                problemText.textContent = `${problem.num1} × ${problem.num2} = ${problem.answer}`;
+                
+                const userAnswerText = document.createElement('div');
+                if (userAnswer === null || isNaN(userAnswer)) {
+                    userAnswerText.textContent = '未作答';
+                    userAnswerText.style.color = 'var(--text-light)';
+                } else {
+                    userAnswerText.textContent = `你的答案: ${userAnswer}`;
+                    userAnswerText.className = isCorrect ? 'correct' : 'incorrect';
+                    userAnswerText.innerHTML += isCorrect ? 
+                        ' <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/></svg>' : 
+                        ' <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>';
+                }
+                
+                resultItem.appendChild(problemText);
+                resultItem.appendChild(userAnswerText);
+                resultItemsContainer.appendChild(resultItem);
+            }
+            
+            const accuracy = Math.round((correctCount / problems.length) * 100);
+            accuracyDisplay.innerHTML = `正确率: <span style="color: ${accuracy >= 80 ? 'var(--success-color)' : accuracy >= 50 ? 'var(--primary-color)' : 'var(--error-color)'}">${accuracy}%</span>`;
+            
+            if (unansweredCount > 0) {
+                const unansweredMsg = document.createElement('div');
+                unansweredMsg.className = 'result-item';
+                unansweredMsg.style.color = 'var(--error-color)';
+                unansweredMsg.style.fontWeight = '500';
+                unansweredMsg.textContent = `你有 ${unansweredCount} 题未完成`;
+                resultItemsContainer.appendChild(unansweredMsg);
+            }
+            
+            // 显示图表
+            renderHistoryChart();
+            
+            // 显示模态框
+            resultModal.classList.add('active');
+        }
+
+        // 渲染历史图表
+        function renderHistoryChart() {
+            const ctx = document.getElementById('history-chart').getContext('2d');
+            
+            // 准备数据 - 最近7天
+            const recentData = historyData.slice(-7).reverse();
+            const dates = recentData.map(item => item.date);
+            const accuracies = recentData.map(item => item.accuracy);
+            const completed = recentData.map(item => item.completed ? 100 : 0);
+            
+            // 如果历史数据不足7天，补充空数据
+            while (dates.length < 7) {
+                dates.unshift('');
+                accuracies.unshift(null);
+                completed.unshift(null);
+            }
+            
+            if (window.historyChart) {
+                window.historyChart.destroy();
+            }
+            
+            window.historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: '正确率 (%)',
+                            data: accuracies,
+                            borderColor: 'var(--primary-color)',
+                            backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: '完成状态',
+                            data: completed,
+                            borderColor: 'var(--success-color)',
+                            backgroundColor: 'rgba(74, 214, 109, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        return `正确率: ${context.raw}%`;
+                                    } else {
+                                        return context.raw === 100 ? '已完成' : '未完成';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 加载历史数据
+        function loadHistoryData() {
+            // 如果没有历史数据，创建一些示例数据
+            if (historyData.length === 0) {
+                const now = new Date();
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    
+                    historyData.push({
+                        date: dateStr,
+                        accuracy: Math.floor(Math.random() * 30 + 50),
+                        completed: Math.random() > 0.3,
+                        timeLeft: Math.floor(Math.random() * 100 + 50)
+                    });
+                }
+                
+                localStorage.setItem('mathChallengeHistory', JSON.stringify(historyData));
+            }
+        }
+
+        // 重置挑战
+        function resetChallenge() {
+            clearInterval(timer);
+            isRunning = false;
+            timeLeft = totalTime;
+            updateTimerDisplay();
+            
+            // 重置进度圈
+            progressCircle.style.transform = 'rotate(0deg)';
+            progressCircle.style.backgroundColor = 'var(--primary-color)';
+            
+            const timerProgress = document.querySelector('.timer-progress');
+            if (timerProgress.children.length > 1) {
+                timerProgress.removeChild(timerProgress.children[1]);
+            }
+            
+            // 重置按钮状态
+            startBtn.disabled = false;
+            endBtn.disabled = true;
+            
+            // 重置输入框
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.value = '';
+                input.disabled = true;
+            });
+            
+            // 重置状态消息
+            statusMessage.textContent = "准备开始挑战";
+            statusMessage.style.color = "var(--text-color)";
+            timerDisplay.style.color = "var(--primary-color)";
+            
+            // 生成新题目
+            generateProblems();
+            
+            // 动画效果
+            resetBtn.classList.add('shake');
+            setTimeout(() => {
+                resetBtn.classList.remove('shake');
+            }, 500);
+        }
+
+        // 初始化应用
+        init();
+    </script>
+</body>
+</html>
